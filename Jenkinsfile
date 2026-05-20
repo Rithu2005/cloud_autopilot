@@ -1,11 +1,13 @@
 pipeline {
     agent any
 
-    stage('Clone') {
-    steps {
-        git branch: 'main', url: 'https://github.com/Rithu2005/cloud_autopilot.git'
-    }
-}
+    stages {
+
+        stage('Clone') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Rithu2005/cloud_autopilot.git'
+            }
+        }
 
         stage('Build Docker Images') {
             steps {
