@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "rithu2005"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Rithu2005/cloud_autopilot.git'
+            }
+        }
+
+        stage('Build Microservices') {
+            steps {
+                script {
+                    def services = ['api-gateway', 'auth-service', 'monitoring-service', 'incident-service', 'scaling-service', 'notification-service', 'discovery-service']
+                    for (service in services) {
+                        dir(service) {
+                            sh 'mvn clean package -DskipTests'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    def services = ['api-gateway', 'auth-service', 'monitoring-service', 'incident-service', 'scaling-service', 'notification-service', 'discovery-service', 'frontend']
+                    for (service in services) {
+                        sh "docker build -t ${DOCKER_REGISTRY}/${service}:${IMAGE_TAG} ./${service}"
+                        sh "docker push ${DOCKER_REGISTRY}/${service}:${IMAGE_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to K8s') {
+            steps {
+                sh "kubectl apply -f kubernetes/common.yaml"
+                sh "kubectl apply -f kubernetes/deployments.yaml"
+                sh "kubectl apply -f kubernetes/hpa-ingress.yaml"
+            }
+        }
+    }
+}

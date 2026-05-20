@@ -1,0 +1,11 @@
+target/
+node_modules/
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.jar
+*.log
+.idea/
+.vscode/
+*.class
+*.iml

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autopilot-config
+  namespace: cloud-autopilot
+data:
+  EUREKA_SERVER: "http://discovery-service:8761/eureka/"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_DB: "autopilot"
+  POSTGRES_USER: "postgres"
+  MONITORING_URL: "http://monitoring-service:8082"
+  INCIDENT_URL: "http://incident-service:8084"
+  GATEWAY_URL: "http://api-gateway:8080"

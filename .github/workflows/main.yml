@@ -1,0 +1,102 @@
+name: Cloud AutoPilot X CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api-gateway, discovery-service, incident-service, monitoring-service, frontend]
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      if: matrix.service != 'frontend'
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Build with Maven
+      if: matrix.service != 'frontend'
+      run: |
+        cd ${{ matrix.service }}
+        mvn clean package -DskipTests
+
+    - name: Set up Node.js
+      if: matrix.service == 'frontend'
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Build Frontend
+      if: matrix.service == 'frontend'
+      run: |
+        cd frontend
+        npm install
+        npm run build
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./${{ matrix.service }}
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Init
+      run: cd terraform && terraform init
+
+    - name: Terraform Validate
+      run: cd terraform && terraform validate
+
+  deploy:
+    needs: [build-and-push, terraform]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+
+    - name: Configure Kubeconfig
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+    - name: Deploy to K8s
+      run: |
+        kubectl apply -f k8s/namespace/
+        kubectl apply -f k8s/postgres/
+        kubectl apply -f k8s/discovery/
+        kubectl apply -f k8s/gateway/
+        kubectl apply -f k8s/incident/
+        kubectl apply -f k8s/monitoring/
+        kubectl apply -f k8s/frontend/
+        kubectl apply -f k8s/prometheus/
+        kubectl apply -f k8s/grafana/
+        kubectl apply -f k8s/ingress/
+        kubectl apply -f k8s/autoscaling/

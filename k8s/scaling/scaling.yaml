@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scaling-service
+  namespace: cloud-autopilot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scaling-service
+  template:
+    metadata:
+      labels:
+        app: scaling-service
+    spec:
+      containers:
+      - name: scaling-service
+        image: scaling-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8084
+        env:
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: autopilot-config
+              key: EUREKA_SERVER
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scaling-service
+  namespace: cloud-autopilot
+spec:
+  selector:
+    app: scaling-service
+  ports:
+  - protocol: TCP
+    port: 8084
+    targetPort: 8084

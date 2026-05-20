@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: incident-service
+  namespace: cloud-autopilot
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: incident-service
+  template:
+    metadata:
+      labels:
+        app: incident-service
+    spec:
+      containers:
+      - name: incident-service
+        image: incident-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8084
+        env:
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: autopilot-config
+              key: EUREKA_SERVER
+        - name: DB_URL
+          value: "jdbc:postgresql://postgres-service:5432/autopilot"
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: autopilot-config
+              key: POSTGRES_USER
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: autopilot-secrets
+              key: POSTGRES_PASSWORD
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 40
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 40
+          periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: incident-service
+  namespace: cloud-autopilot
+spec:
+  selector:
+    app: incident-service
+  ports:
+  - protocol: TCP
+    port: 8084
+    targetPort: 8084
