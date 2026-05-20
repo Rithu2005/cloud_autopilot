@@ -11,19 +11,20 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                bat 'docker build -t discovery-service ./discovery-service'
-                bat 'docker build -t auth-service ./auth-service'
-                bat 'docker build -t incident-service ./incident-service'
-                bat 'docker build -t monitoring-service ./monitoring-service'
-                bat 'docker build -t notification-service ./notification-service'
-                bat 'docker build -t scaling-service ./scaling-service'
-                bat 'docker build -t api-gateway ./api-gateway'
+                sh 'docker build -t discovery-service ./discovery-service'
+                sh 'docker build -t auth-service ./auth-service'
+                sh 'docker build -t incident-service ./incident-service'
+                sh 'docker build -t monitoring-service ./monitoring-service'
+                sh 'docker build -t notification-service ./notification-service'
+                sh 'docker build -t scaling-service ./scaling-service'
+                sh 'docker build -t api-gateway ./api-gateway'
+                sh 'docker build -t frontend ./frontend'
             }
         }
 
         stage('Deploy Kubernetes') {
             steps {
-                bat 'kubectl apply -f k8s/'
+                sh 'kubectl apply -f k8s/'
             }
         }
     }
