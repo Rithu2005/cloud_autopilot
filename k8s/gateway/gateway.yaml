@@ -13,6 +13,13 @@ spec:
       labels:
         app: api-gateway
     spec:
+      initContainers:
+      - name: wait-for-discovery
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup discovery-service.cloud-autopilot.svc.cluster.local; do echo waiting for discovery; sleep 2; done"]
+      - name: wait-for-redis
+        image: busybox:1.28
+        command: ['sh', '-c', "until nc -zv redis-service.cloud-autopilot.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done"]
       containers:
       - name: api-gateway
         image: api-gateway:latest
@@ -30,6 +37,16 @@ spec:
             secretKeyRef:
               name: autopilot-secrets
               key: JWT_SECRET
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: autopilot-config
+              key: REDIS_HOST
+        - name: ZIPKIN_URL
+          valueFrom:
+            configMapKeyRef:
+              name: autopilot-config
+              key: ZIPKIN_URL
         resources:
           requests:
             memory: "256Mi"
@@ -55,6 +72,10 @@ kind: Service
 metadata:
   name: api-gateway
   namespace: cloud-autopilot
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8080'
+    prometheus.io/path: '/actuator/prometheus'
 spec:
   selector:
     app: api-gateway

@@ -3,28 +3,27 @@ pipeline {
 
     stages {
 
-        stage('Clone') {
+        stage('Clone Check') {
             steps {
-                git branch: 'main', url: 'https://github.com/Rithu2005/cloud_autopilot.git'
+                bat 'dir'
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Docker Check') {
             steps {
-                sh 'docker build -t discovery-service ./discovery-service'
-                sh 'docker build -t auth-service ./auth-service'
-                sh 'docker build -t incident-service ./incident-service'
-                sh 'docker build -t monitoring-service ./monitoring-service'
-                sh 'docker build -t notification-service ./notification-service'
-                sh 'docker build -t scaling-service ./scaling-service'
-                sh 'docker build -t api-gateway ./api-gateway'
-                sh 'docker build -t frontend ./frontend'
+                bat 'docker ps'
             }
         }
 
-        stage('Deploy Kubernetes') {
+        stage('Kubernetes Check') {
             steps {
-                sh 'kubectl apply -f k8s --recursive'
+                bat 'kubectl get pods'
+            }
+        }
+
+        stage('Build Success') {
+            steps {
+                echo 'AI Cloud Autopilot Pipeline Success'
             }
         }
     }

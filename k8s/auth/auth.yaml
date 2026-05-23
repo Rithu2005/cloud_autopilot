@@ -13,6 +13,13 @@ spec:
       labels:
         app: auth-service
     spec:
+      initContainers:
+      - name: wait-for-discovery
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup discovery-service.cloud-autopilot.svc.cluster.local; do echo waiting for discovery; sleep 2; done"]
+      - name: wait-for-postgres
+        image: busybox:1.28
+        command: ['sh', '-c', "until nc -zv postgres-service.cloud-autopilot.svc.cluster.local 5432; do echo waiting for postgres; sleep 2; done"]
       containers:
       - name: auth-service
         image: auth-service:latest
@@ -67,6 +74,10 @@ kind: Service
 metadata:
   name: auth-service
   namespace: cloud-autopilot
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8081'
+    prometheus.io/path: '/actuator/prometheus'
 spec:
   selector:
     app: auth-service

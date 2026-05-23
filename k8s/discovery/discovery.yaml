@@ -48,6 +48,10 @@ kind: Service
 metadata:
   name: discovery-service
   namespace: cloud-autopilot
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8761'
+    prometheus.io/path: '/actuator/prometheus'
 spec:
   selector:
     app: discovery-service

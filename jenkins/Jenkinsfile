@@ -1,48 +1,30 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_REGISTRY = "rithu2005"
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
-    }
-
     stages {
-        stage('Checkout') {
+
+        stage('Clone') {
             steps {
-                git 'https://github.com/Rithu2005/cloud_autopilot.git'
+                git branch: 'main', url: 'https://github.com/Rithu2005/cloud_autopilot.git'
             }
         }
 
-        stage('Build Microservices') {
+        stage('Build Docker Images') {
             steps {
-                script {
-                    def services = ['api-gateway', 'auth-service', 'monitoring-service', 'incident-service', 'scaling-service', 'notification-service', 'discovery-service']
-                    for (service in services) {
-                        dir(service) {
-                            sh 'mvn clean package -DskipTests'
-                        }
-                    }
-                }
+                sh 'docker build -t discovery-service ./discovery-service'
+                sh 'docker build -t auth-service ./auth-service'
+                sh 'docker build -t incident-service ./incident-service'
+                sh 'docker build -t monitoring-service ./monitoring-service'
+                sh 'docker build -t notification-service ./notification-service'
+                sh 'docker build -t scaling-service ./scaling-service'
+                sh 'docker build -t api-gateway ./api-gateway'
+                sh 'docker build -t frontend ./frontend'
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('Deploy Kubernetes') {
             steps {
-                script {
-                    def services = ['api-gateway', 'auth-service', 'monitoring-service', 'incident-service', 'scaling-service', 'notification-service', 'discovery-service', 'frontend']
-                    for (service in services) {
-                        sh "docker build -t ${DOCKER_REGISTRY}/${service}:${IMAGE_TAG} ./${service}"
-                        sh "docker push ${DOCKER_REGISTRY}/${service}:${IMAGE_TAG}"
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to K8s') {
-            steps {
-                sh "kubectl apply -f kubernetes/common.yaml"
-                sh "kubectl apply -f kubernetes/deployments.yaml"
-                sh "kubectl apply -f kubernetes/hpa-ingress.yaml"
+                sh 'kubectl apply -f k8s/'
             }
         }
     }

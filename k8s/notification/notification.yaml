@@ -13,6 +13,10 @@ spec:
       labels:
         app: notification-service
     spec:
+      initContainers:
+      - name: wait-for-discovery
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup discovery-service.cloud-autopilot.svc.cluster.local; do echo waiting for discovery; sleep 2; done"]
       containers:
       - name: notification-service
         image: notification-service:latest
@@ -38,6 +42,10 @@ kind: Service
 metadata:
   name: notification-service
   namespace: cloud-autopilot
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8085'
+    prometheus.io/path: '/actuator/prometheus'
 spec:
   selector:
     app: notification-service

@@ -13,6 +13,13 @@ spec:
       labels:
         app: incident-service
     spec:
+      initContainers:
+      - name: wait-for-discovery
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup discovery-service.cloud-autopilot.svc.cluster.local; do echo waiting for discovery; sleep 2; done"]
+      - name: wait-for-postgres
+        image: busybox:1.28
+        command: ['sh', '-c', "until nc -zv postgres-service.cloud-autopilot.svc.cluster.local 5432; do echo waiting for postgres; sleep 2; done"]
       containers:
       - name: incident-service
         image: incident-service:latest
@@ -37,6 +44,11 @@ spec:
             secretKeyRef:
               name: autopilot-secrets
               key: POSTGRES_PASSWORD
+        - name: ZIPKIN_URL
+          valueFrom:
+            configMapKeyRef:
+              name: autopilot-config
+              key: ZIPKIN_URL
         resources:
           requests:
             memory: "256Mi"
@@ -62,6 +74,10 @@ kind: Service
 metadata:
   name: incident-service
   namespace: cloud-autopilot
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8084'
+    prometheus.io/path: '/actuator/prometheus'
 spec:
   selector:
     app: incident-service

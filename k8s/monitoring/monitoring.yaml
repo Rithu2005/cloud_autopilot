@@ -13,6 +13,10 @@ spec:
       labels:
         app: monitoring-service
     spec:
+      initContainers:
+      - name: wait-for-discovery
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup discovery-service.cloud-autopilot.svc.cluster.local; do echo waiting for discovery; sleep 2; done"]
       containers:
       - name: monitoring-service
         image: monitoring-service:latest
@@ -30,6 +34,11 @@ spec:
             configMapKeyRef:
               name: autopilot-config
               key: GATEWAY_URL
+        - name: ZIPKIN_URL
+          valueFrom:
+            configMapKeyRef:
+              name: autopilot-config
+              key: ZIPKIN_URL
         resources:
           requests:
             memory: "256Mi"
@@ -55,6 +64,10 @@ kind: Service
 metadata:
   name: monitoring-service
   namespace: cloud-autopilot
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8082'
+    prometheus.io/path: '/actuator/prometheus'
 spec:
   selector:
     app: monitoring-service

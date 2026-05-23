@@ -11,3 +11,5 @@ data:
   MONITORING_URL: "http://monitoring-service:8082"
   INCIDENT_URL: "http://incident-service:8084"
   GATEWAY_URL: "http://api-gateway:8080"
+  REDIS_HOST: "redis-service"
+  ZIPKIN_URL: "http://zipkin:9411/api/v2/spans"
