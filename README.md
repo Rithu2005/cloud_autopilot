@@ -93,3 +93,4 @@ kubectl apply -f k8s/autoscaling/
 - Implemented a production-grade CI/CD pipeline with GitHub Actions, automating multi-stage Docker builds and K8s deployments.
 - Established a comprehensive observability stack with Prometheus and Grafana, monitoring JVM metrics and service health in real-time.
 
+resume
