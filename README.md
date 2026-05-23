@@ -92,3 +92,5 @@ kubectl apply -f k8s/autoscaling/
 - Automated full infrastructure provisioning on AWS using modular Terraform (VPC, Security Groups, ECR, EC2).
 - Implemented a production-grade CI/CD pipeline with GitHub Actions, automating multi-stage Docker builds and K8s deployments.
 - Established a comprehensive observability stack with Prometheus and Grafana, monitoring JVM metrics and service health in real-time.
+
+jenkins succesfull
