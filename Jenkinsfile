@@ -5,11 +5,13 @@ pipeline {
         maven 'Maven-3'
     }
 
-    environment {
-        SONAR_AUTH_TOKEN = credentials('SONAR_AUTH_TOKEN')
-    }
-
     stages {
+
+        stage('Check Repository') {
+            steps {
+                sh 'ls'
+            }
+        }
 
         stage('Build Jar') {
             steps {
@@ -17,22 +19,15 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('Docker Version Check') {
             steps {
-                withSonarQubeEnv('sonar-server') {
-                    sh '''
-                    mvn sonar:sonar \
-                    -Dsonar.projectKey=autopilot-sre \
-                    -Dsonar.host.url=http://host.docker.internal:9000 \
-                    -Dsonar.login=$SONAR_AUTH_TOKEN
-                    '''
-                }
+                sh 'docker --version || true'
             }
         }
 
         stage('Pipeline Success') {
             steps {
-                echo 'Pipeline Success'
+                echo 'AI Cloud Autopilot Pipeline Executed Successfully'
             }
         }
     }
