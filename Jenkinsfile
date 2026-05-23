@@ -1,29 +1,38 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven-3'
+    }
+
+    environment {
+        SONAR_AUTH_TOKEN = credentials('SONAR_AUTH_TOKEN')
+    }
+
     stages {
 
-        stage('Clone Check') {
+        stage('Build Jar') {
             steps {
-                bat 'dir'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Docker Check') {
+        stage('SonarQube Analysis') {
             steps {
-                bat 'docker ps'
+                withSonarQubeEnv('sonar-server') {
+                    sh '''
+                    mvn sonar:sonar \
+                    -Dsonar.projectKey=autopilot-sre \
+                    -Dsonar.host.url=http://host.docker.internal:9000 \
+                    -Dsonar.login=$SONAR_AUTH_TOKEN
+                    '''
+                }
             }
         }
 
-        stage('Kubernetes Check') {
+        stage('Pipeline Success') {
             steps {
-                bat 'kubectl get pods'
-            }
-        }
-
-        stage('Build Success') {
-            steps {
-                echo 'AI Cloud Autopilot Pipeline Success'
+                echo 'Pipeline Success'
             }
         }
     }
